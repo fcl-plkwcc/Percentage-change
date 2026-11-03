@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>百分率接龍 - 終極雙向版</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f0f8ff;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        user-select: none;
+    }
+    h1 { color: #2c3e50; margin-bottom: 10px; }
+    .controls { margin-bottom: 20px; }
+    button {
+        padding: 10px 20px; font-size: 16px; margin: 0 10px;
+        cursor: pointer; border-radius: 8px; border: none;
+        background-color: #3498db; color: white; font-weight: bold;
+    }
+    button:hover { background-color: #2980b9; }
+
+    .game-wrapper {
+        width: 100%;
+        max-width: 1200px;
+        overflow-x: auto; 
+        padding: 20px;
+        box-sizing: border-box;
+        border: 2px dashed #bdc3c7;
+        background: white;
+        border-radius: 12px;
+    }
+
+    .board {
+        display: grid;
+        grid-template-columns: 140px 600px 140px;
+        grid-template-rows: 140px 500px 140px;
+        gap: 15px;
+        width: max-content;
+        margin: auto;
+    }
+
+    .node {
+        background: #2c3e50;
+        color: white;
+        font-size: 32px;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .path { display: flex; justify-content: center; align-items: center; }
+    .h-path { flex-direction: column; gap: 20px; }
+    .v-path { flex-direction: row; gap: 20px; }
+    
+    .track { 
+        display: flex; 
+        background-color: #dcdde1; 
+    }
+    .h-path .track { flex-direction: row; width: 260px; height: 60px; }
+    .v-path .track { flex-direction: column; width: 70px; height: 240px; }
+
+    .pool {
+        background: #ecf0f1;
+        border: 3px inset #bdc3c7;
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .slot {
+        flex: 1;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: 0.3s;
+        box-sizing: border-box;
+    }
+    
+    .h-path .slot { border-right: 2px dashed #7f8fa6; }
+    .h-path .slot:last-child { border-right: none; }
+    .v-path .slot { border-bottom: 2px dashed #7f8fa6; }
+    .v-path .slot:last-child { border-bottom: none; }
+
+    .slot[data-type="num"] { background-color: #e3f2fd; }
+    .slot[data-type="pct"] { background-color: #fff3e0; }
+
+    .track.right-dir { clip-path: polygon(0 0, 88% 0, 100% 50%, 88% 100%, 0 100%); }
+    .track.left-dir  { clip-path: polygon(12% 0, 100% 0, 100% 100%, 12% 100%, 0 50%); }
+    .track.down-dir  { clip-path: polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%); }
+    .track.up-dir    { clip-path: polygon(50% 0, 100% 12%, 100% 100%, 0 100%, 0 12%); }
+
+    .card {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        cursor: grab;
+        font-weight: bold;
+        box-sizing: border-box;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        font-size: 14px;
+        line-height: 1.1;
+        padding: 5px;
+        transition: background 0.2s;
+    }
+    .card:active { cursor: grabbing; }
+
+    .pool .card {
+        width: 100px;
+        height: 50px;
+        border-radius: 6px;
+    }
+
+    .slot .card {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
+        font-size: 13px; 
+    }
+
+    .card.num-card { background: #74b9ff; color: #0984e3; border: 2px solid #0984e3; }
+    .card.pct-card { background: #ffeaa7; color: #d63031; border: 2px solid #e17055; }
+    .slot .card.num-card { background: #74b9ff; border: none; }
+    .slot .card.pct-card { background: #ffeaa7; border: none; }
+
+    .selected { box-shadow: 0 0 10px 4px #e84393 !important; border: 2px solid #e84393 !important; z-index: 100;}
+</style>
+</head>
+<body>
+
+    <h1>百分率接龍：雙向挑戰</h1>
+    <div class="controls">
+        <button onclick="resetGame()" style="background-color: #95a5a6;">重新開始</button>
+    </div>
+
+    <div class="game-wrapper">
+        <div class="board">
+            <div class="node">200</div>
+            
+            <div class="path h-path">
+                <div class="track right-dir">
+                    <div class="slot" data-type="num" data-ans="+50"></div>
+                    <div class="slot" data-type="pct" data-ans="increase by 25%"></div>
+                </div>
+                <div class="track left-dir">
+                    <div class="slot" data-type="pct" data-ans="decrease by 20%"></div>
+                    <div class="slot" data-type="num" data-ans="-50"></div>
+                </div>
+            </div>
+
+            <div class="node">250</div>
+
+            <div class="path v-path">
+                <div class="track down-dir">
+                    <div class="slot" data-type="num" data-ans="-100"></div>
+                    <div class="slot" data-type="pct" data-ans="decrease by 50%"></div>
+                </div>
+                <div class="track up-dir">
+                    <div class="slot" data-type="pct" data-ans="increase by 100%"></div>
+                    <div class="slot" data-type="num" data-ans="+100"></div>
+                </div>
+            </div>
+
+            <div class="pool" id="pool"></div>
+
+            <div class="path v-path">
+                <div class="track down-dir">
+                    <div class="slot" data-type="num" data-ans="-125"></div>
+                    <div class="slot" data-type="pct" data-ans="decrease by 50%"></div>
+                </div>
+                <div class="track up-dir">
+                    <div class="slot" data-type="pct" data-ans="increase by 100%"></div>
+                    <div class="slot" data-type="num" data-ans="+125"></div>
+                </div>
+            </div>
+
+            <div class="node">100</div>
+
+            <div class="path h-path">
+                <div class="track right-dir">
+                    <div class="slot" data-type="num" data-ans="+25"></div>
+                    <div class="slot" data-type="pct" data-ans="increase by 25%"></div>
+                </div>
+                <div class="track left-dir">
+                    <div class="slot" data-type="pct" data-ans="decrease by 20%"></div>
+                    <div class="slot" data-type="num" data-ans="-25"></div>
+                </div>
+            </div>
+
+            <div class="node">125</div>
+        </div>
+    </div>
+
+<script>
+    const pctCards = [
+        "increase by 25%", "decrease by 25%", "increase by 20%", "decrease by 20%",
+        "increase by 50%", "decrease by 50%", "increase by 100%", "decrease by 100%",
+        "increase by 25%", "decrease by 25%", "increase by 20%", "decrease by 20%",
+        "increase by 50%", "decrease by 50%", "increase by 100%", "decrease by 100%"
+    ];
+    const numCards = [
+        "+50", "-50", "-100", "+100", "-125", "+125", "+25", "-25",
+        "+20", "-20", "+75", "-75"
+    ];
+
+    let selectedCard = null;
+
+    function initGame() {
+        const pool = document.getElementById('pool');
+        pool.innerHTML = '';
+        
+        let allCards = [];
+        pctCards.forEach(val => allCards.push({val: val, type: 'pct'}));
+        numCards.forEach(val => allCards.push({val: val, type: 'num'}));
+        
+        allCards.sort(() => Math.random() - 0.5);
+
+        const poolWidth = 580;
+        const poolHeight = 480;
+        
+        allCards.forEach((data, index) => {
+            let card = document.createElement('div');
+            card.className = `card ${data.type}-card`;
+            card.id = 'card-' + index;
+            card.draggable = true;
+            card.dataset.val = data.val;
+            card.dataset.type = data.type;
+            
+            card.innerHTML = data.val.replace("increase by", "increase<br>by").replace("decrease by", "decrease<br>by");
+
+            let x = Math.floor(Math.random() * (poolWidth - 100));
+            let y = Math.floor(Math.random() * (poolHeight - 60));
+            card.style.position = 'absolute';
+            card.style.left = x + 'px';
+            card.style.top = y + 'px';
+
+            card.addEventListener('dragstart', dragStart);
+            card.addEventListener('click', cardClick);
+            pool.appendChild(card);
+        });
+
+        setupSlots();
+        setupPoolDrop();
+    }
+
+    function dragStart(e) {
+        e.dataTransfer.setData('text/plain', e.target.id);
+        if(selectedCard) {
+            selectedCard.classList.remove('selected');
+            selectedCard = null;
+        }
+    }
+
+    function setupSlots() {
+        const slots = document.querySelectorAll('.slot');
+        slots.forEach(slot => {
+            slot.innerHTML = ''; 
+            
+            slot.addEventListener('dragover', e => e.preventDefault());
+            slot.addEventListener('drop', slotDrop);
+            slot.addEventListener('click', slotClick);
+        });
+    }
+
+    function slotDrop(e) {
+        e.preventDefault();
+        const id = e.dataTransfer.getData('text/plain');
+        const card = document.getElementById(id);
+        placeCardInSlot(card, e.currentTarget);
+    }
+
+    function setupPoolDrop() {
+        const pool = document.getElementById('pool');
+        pool.addEventListener('dragover', e => e.preventDefault());
+        pool.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if(e.target.classList.contains('card')) return; 
+
+            const id = e.dataTransfer.getData('text/plain');
+            const card = document.getElementById(id);
+            if (card) {
+                const rect = pool.getBoundingClientRect();
+                let x = e.clientX - rect.left - 50; 
+                let y = e.clientY - rect.top - 25;  
+                
+                x = Math.max(0, Math.min(x, rect.width - 100));
+                y = Math.max(0, Math.min(y, rect.height - 50));
+
+                card.style.position = 'absolute';
+                card.style.left = x + 'px';
+                card.style.top = y + 'px';
+                pool.appendChild(card);
+            }
+        });
+        
+        pool.addEventListener('click', (e) => {
+            if(e.target.id === 'pool' && selectedCard) {
+                const rect = pool.getBoundingClientRect();
+                let x = e.clientX - rect.left - 50;
+                let y = e.clientY - rect.top - 25;
+                selectedCard.style.position = 'absolute';
+                selectedCard.style.left = x + 'px';
+                selectedCard.style.top = y + 'px';
+                pool.appendChild(selectedCard);
+                selectedCard.classList.remove('selected');
+                selectedCard = null;
+            }
+        });
+    }
+
+    function cardClick(e) {
+        e.stopPropagation();
+        if (selectedCard) selectedCard.classList.remove('selected');
+        selectedCard = e.currentTarget;
+        selectedCard.classList.add('selected');
+    }
+
+    function slotClick(e) {
+        if (selectedCard) {
+            placeCardInSlot(selectedCard, e.currentTarget);
+            selectedCard.classList.remove('selected');
+            selectedCard = null;
+        }
+    }
+
+    function placeCardInSlot(card, slot) {
+        if (!card) return;
+        if (slot.children.length > 0) {
+            const oldCard = slot.children[0];
+            document.getElementById('pool').appendChild(oldCard);
+            oldCard.style.position = 'absolute';
+            oldCard.style.left = '240px'; 
+            oldCard.style.top = '200px';
+        }
+        card.style.position = 'absolute';
+        card.style.left = '0';
+        card.style.top = '0';
+        slot.appendChild(card);
+    }
+
+    function resetGame() {
+        initGame();
+    }
+
+    window.onload = initGame;
+</script>
+</body>
+</html>
