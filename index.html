@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>百分率接龍 - 終極雙向版</title>
+<title>Percentage Change: Two-Way Challenge</title>
 <style>
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -93,6 +93,14 @@
     .slot[data-type="num"] { background-color: #e3f2fd; }
     .slot[data-type="pct"] { background-color: #fff3e0; }
 
+    .slot:empty::before {
+        content: attr(data-label);
+        color: #7f8fa6;
+        font-weight: bold;
+        font-size: 14px;
+        text-align: center;
+    }
+
     .track.right-dir { clip-path: polygon(0 0, 88% 0, 100% 50%, 88% 100%, 0 100%); }
     .track.left-dir  { clip-path: polygon(12% 0, 100% 0, 100% 100%, 12% 100%, 0 50%); }
     .track.down-dir  { clip-path: polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%); }
@@ -141,9 +149,9 @@
 </head>
 <body>
 
-    <h1>百分率接龍：雙向挑戰</h1>
+    <h1>Percentage Change: Two-Way Challenge</h1>
     <div class="controls">
-        <button onclick="resetGame()" style="background-color: #95a5a6;">重新開始</button>
+        <button onclick="resetGame()" style="background-color: #95a5a6;">Restart Game</button>
     </div>
 
     <div class="game-wrapper">
@@ -152,12 +160,12 @@
             
             <div class="path h-path">
                 <div class="track right-dir">
-                    <div class="slot" data-type="num" data-ans="+50"></div>
-                    <div class="slot" data-type="pct" data-ans="increase by 25%"></div>
+                    <div class="slot" data-type="num" data-label="Number" data-ans="+50"></div>
+                    <div class="slot" data-type="pct" data-label="% Change" data-ans="increase by 25%"></div>
                 </div>
                 <div class="track left-dir">
-                    <div class="slot" data-type="pct" data-ans="decrease by 20%"></div>
-                    <div class="slot" data-type="num" data-ans="-50"></div>
+                    <div class="slot" data-type="pct" data-label="% Change" data-ans="decrease by 20%"></div>
+                    <div class="slot" data-type="num" data-label="Number" data-ans="-50"></div>
                 </div>
             </div>
 
@@ -165,12 +173,12 @@
 
             <div class="path v-path">
                 <div class="track down-dir">
-                    <div class="slot" data-type="num" data-ans="-100"></div>
-                    <div class="slot" data-type="pct" data-ans="decrease by 50%"></div>
+                    <div class="slot" data-type="num" data-label="Number" data-ans="-100"></div>
+                    <div class="slot" data-type="pct" data-label="% Change" data-ans="decrease by 50%"></div>
                 </div>
                 <div class="track up-dir">
-                    <div class="slot" data-type="pct" data-ans="increase by 100%"></div>
-                    <div class="slot" data-type="num" data-ans="+100"></div>
+                    <div class="slot" data-type="pct" data-label="% Change" data-ans="increase by 100%"></div>
+                    <div class="slot" data-type="num" data-label="Number" data-ans="+100"></div>
                 </div>
             </div>
 
@@ -178,12 +186,12 @@
 
             <div class="path v-path">
                 <div class="track down-dir">
-                    <div class="slot" data-type="num" data-ans="-125"></div>
-                    <div class="slot" data-type="pct" data-ans="decrease by 50%"></div>
+                    <div class="slot" data-type="num" data-label="Number" data-ans="-125"></div>
+                    <div class="slot" data-type="pct" data-label="% Change" data-ans="decrease by 50%"></div>
                 </div>
                 <div class="track up-dir">
-                    <div class="slot" data-type="pct" data-ans="increase by 100%"></div>
-                    <div class="slot" data-type="num" data-ans="+125"></div>
+                    <div class="slot" data-type="pct" data-label="% Change" data-ans="increase by 100%"></div>
+                    <div class="slot" data-type="num" data-label="Number" data-ans="+125"></div>
                 </div>
             </div>
 
@@ -191,12 +199,12 @@
 
             <div class="path h-path">
                 <div class="track right-dir">
-                    <div class="slot" data-type="num" data-ans="+25"></div>
-                    <div class="slot" data-type="pct" data-ans="increase by 25%"></div>
+                    <div class="slot" data-type="num" data-label="Number" data-ans="+25"></div>
+                    <div class="slot" data-type="pct" data-label="% Change" data-ans="increase by 25%"></div>
                 </div>
                 <div class="track left-dir">
-                    <div class="slot" data-type="pct" data-ans="decrease by 20%"></div>
-                    <div class="slot" data-type="num" data-ans="-25"></div>
+                    <div class="slot" data-type="pct" data-label="% Change" data-ans="decrease by 20%"></div>
+                    <div class="slot" data-type="num" data-label="Number" data-ans="-25"></div>
                 </div>
             </div>
 
@@ -279,7 +287,11 @@
         e.preventDefault();
         const id = e.dataTransfer.getData('text/plain');
         const card = document.getElementById(id);
-        placeCardInSlot(card, e.currentTarget);
+        
+        // Enforce type matching
+        if (card && card.dataset.type === e.currentTarget.dataset.type) {
+            placeCardInSlot(card, e.currentTarget);
+        }
     }
 
     function setupPoolDrop() {
@@ -330,9 +342,18 @@
 
     function slotClick(e) {
         if (selectedCard) {
-            placeCardInSlot(selectedCard, e.currentTarget);
-            selectedCard.classList.remove('selected');
-            selectedCard = null;
+            // Enforce type matching
+            if (selectedCard.dataset.type === e.currentTarget.dataset.type) {
+                placeCardInSlot(selectedCard, e.currentTarget);
+                selectedCard.classList.remove('selected');
+                selectedCard = null;
+            } else {
+                // Flash the slot red momentarily to indicate error
+                const slot = e.currentTarget;
+                const origBg = slot.style.backgroundColor;
+                slot.style.backgroundColor = '#fab1a0';
+                setTimeout(() => slot.style.backgroundColor = origBg, 300);
+            }
         }
     }
 
